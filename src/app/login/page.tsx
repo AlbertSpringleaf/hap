@@ -13,11 +13,14 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Attempting login with:', { email, password });
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
+
+      console.log('Login result:', result);
 
       if (result?.error) {
         setError('Invalid credentials');
@@ -25,6 +28,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('An error occurred');
     }
   };

@@ -22,7 +22,7 @@ interface AppTile {
 const appTiles: AppTile[] = [
   {
     title: 'Koopovereenkomsten',
-    description: 'Beheer al je koopovereenkomsten en contracten',
+    description: 'Beheer al je koopovereenkomsten',
     icon: DocumentTextIcon,
     href: '/koopovereenkomsten',
     color: 'bg-blue-500',

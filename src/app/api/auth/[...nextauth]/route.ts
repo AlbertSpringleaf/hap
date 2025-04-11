@@ -1,7 +1,14 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { AuthOptions } from "next-auth";
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+
+// Hardcoded credentials
+const VALID_CREDENTIALS = {
+  email: "a.pietens@springleaf.nl",
+  password: "9fe@m3W6.A.K"
+};
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -16,19 +23,46 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        // Hardcoded user for now - in production this would come from a database
-        const user = {
-          id: "1",
-          email: "a.pietens@springleaf.nl",
-          password: await bcrypt.hash("9fe@m3W6.A.K", 10),
-        };
+        if (credentials.email === VALID_CREDENTIALS.email && 
+            credentials.password === VALID_CREDENTIALS.password) {
+          
+          // Check if organization exists
+          let organization = await prisma.organization.findUnique({
+            where: { domain: "springleafautomation" }
+          });
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+          // If organization doesn't exist, create it
+          if (!organization) {
+            organization = await prisma.organization.create({
+              data: {
+                domain: "springleafautomation",
+                name: "Springleaf Automation"
+              }
+            });
+          }
 
-        if (credentials.email === user.email && isValid) {
+          // Check if user exists in database
+          let user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
+
+          // If user doesn't exist, create them
+          if (!user) {
+            const hashedPassword = await bcrypt.hash(credentials.password, 10);
+            user = await prisma.user.create({
+              data: {
+                email: credentials.email,
+                password: hashedPassword,
+                name: "Albert Pietens",
+                organizationId: organization.id
+              }
+            });
+          }
+
           return {
             id: user.id,
             email: user.email,
+            organizationId: user.organizationId
           };
         }
 
@@ -36,6 +70,20 @@ export const authOptions: AuthOptions = {
       }
     })
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.organizationId = user.organizationId;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.organizationId = token.organizationId as string;
+      }
+      return session;
+    }
+  },
   pages: {
     signIn: "/login",
   },

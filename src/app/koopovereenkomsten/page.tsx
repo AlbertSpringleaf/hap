@@ -46,6 +46,18 @@ export default function KoopovereenkomstenPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Check if file is a PDF
+    if (file.type !== 'application/pdf') {
+      setError('Alleen PDF bestanden zijn toegestaan');
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Het bestand is te groot. Maximum grootte is 10MB');
+      return;
+    }
+
     setIsUploading(true);
     setError(null);
 
@@ -69,16 +81,24 @@ export default function KoopovereenkomstenPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload koopovereenkomst');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload koopovereenkomst');
         }
 
         await fetchKoopovereenkomsten();
+        // Clear the file input
+        event.target.value = '';
+      };
+
+      reader.onerror = () => {
+        setError('Er is een fout opgetreden bij het lezen van het bestand');
+        setIsUploading(false);
       };
 
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading koopovereenkomst:', error);
-      setError('Er is een fout opgetreden bij het uploaden van de koopovereenkomst');
+      setError(error instanceof Error ? error.message : 'Er is een fout opgetreden bij het uploaden van de koopovereenkomst');
     } finally {
       setIsUploading(false);
     }
@@ -117,7 +137,7 @@ export default function KoopovereenkomstenPage() {
                 <h2 className="text-lg font-medium text-gray-900">Recente overeenkomsten</h2>
                 <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer">
                   <DocumentPlusIcon className="h-5 w-5 mr-2" />
-                  Nieuwe overeenkomst
+                  {isUploading ? 'Bezig met uploaden...' : 'Nieuwe overeenkomst'}
                   <input
                     type="file"
                     accept=".pdf"
@@ -136,7 +156,10 @@ export default function KoopovereenkomstenPage() {
 
               {isUploading && (
                 <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-blue-600">Bezig met uploaden...</p>
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                    <p className="text-blue-600">Bezig met uploaden...</p>
+                  </div>
                 </div>
               )}
 
