@@ -3,11 +3,13 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ArrowLeftIcon, DocumentPlusIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, DocumentPlusIcon, DocumentTextIcon, TrashIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 
 interface Koopovereenkomst {
   id: string;
   naam: string;
+  status: string;
+  jsonData: any;
   createdAt: string;
 }
 
@@ -16,6 +18,8 @@ export default function KoopovereenkomstenPage() {
   const router = useRouter();
   const [koopovereenkomsten, setKoopovereenkomsten] = useState<Koopovereenkomst[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,6 +108,62 @@ export default function KoopovereenkomstenPage() {
     }
   };
 
+  const handleExtractData = async (koopovereenkomstId: string) => {
+    setIsExtracting(koopovereenkomstId);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/koopovereenkomsten/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          koopovereenkomstId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to extract data from koopovereenkomst');
+      }
+
+      await fetchKoopovereenkomsten();
+    } catch (error) {
+      console.error('Error extracting data from koopovereenkomst:', error);
+      setError(error instanceof Error ? error.message : 'Er is een fout opgetreden bij het extraheren van gegevens uit de koopovereenkomst');
+    } finally {
+      setIsExtracting(null);
+    }
+  };
+
+  const handleDelete = async (koopovereenkomstId: string) => {
+    if (!confirm('Weet je zeker dat je deze koopovereenkomst wilt verwijderen?')) {
+      return;
+    }
+
+    setIsDeleting(koopovereenkomstId);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/koopovereenkomsten/${koopovereenkomstId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete koopovereenkomst');
+      }
+
+      await fetchKoopovereenkomsten();
+    } catch (error) {
+      console.error('Error deleting koopovereenkomst:', error);
+      setError(error instanceof Error ? error.message : 'Er is een fout opgetreden bij het verwijderen van de koopovereenkomst');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -132,64 +192,117 @@ export default function KoopovereenkomstenPage() {
               Hier kun je al je koopovereenkomsten beheren binnen het Hyperautomation Platform. Je kunt nieuwe overeenkomsten aanmaken, bestaande bekijken of wijzigen.
             </p>
             
-            <div className="border-t border-gray-200 pt-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Recente overeenkomsten</h2>
-                <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer">
-                  <DocumentPlusIcon className="h-5 w-5 mr-2" />
-                  {isUploading ? 'Bezig met uploaden...' : 'Nieuwe overeenkomst'}
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                  />
-                </label>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-gray-900">Recente overeenkomsten</h2>
+              <label className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer">
+                <DocumentPlusIcon className="h-5 w-5 mr-2" />
+                {isUploading ? 'Bezig met uploaden...' : 'Nieuwe overeenkomst'}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+              </label>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600">{error}</p>
               </div>
+            )}
 
-              {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-600">{error}</p>
+            {isUploading && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                  <p className="text-blue-600">Bezig met uploaden...</p>
                 </div>
-              )}
+              </div>
+            )}
 
-              {isUploading && (
-                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-                    <p className="text-blue-600">Bezig met uploaden...</p>
-                  </div>
-                </div>
-              )}
-
-              {koopovereenkomsten.length === 0 ? (
-                <div className="bg-gray-50 rounded-md p-4 text-center">
-                  <p className="text-gray-500">Nog geen overeenkomsten beschikbaar.</p>
-                </div>
-              ) : (
-                <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                  <ul className="divide-y divide-gray-200">
-                    {koopovereenkomsten.map((koopovereenkomst) => (
-                      <li key={koopovereenkomst.id}>
-                        <div className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
+            {koopovereenkomsten.length === 0 ? (
+              <div className="bg-gray-50 rounded-md p-4 text-center">
+                <p className="text-gray-500">Nog geen overeenkomsten beschikbaar.</p>
+              </div>
+            ) : (
+              <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                <ul className="divide-y divide-gray-200">
+                  {koopovereenkomsten.map((koopovereenkomst) => (
+                    <li key={koopovereenkomst.id}>
+                      <div className="px-4 py-4 sm:px-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-indigo-600 truncate">
                               {koopovereenkomst.naam}
                             </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {new Date(koopovereenkomst.createdAt).toLocaleDateString('nl-NL')}
+                            <p className="mt-1 text-sm text-gray-500">
+                              Status: {koopovereenkomst.status}
+                            </p>
+                            {koopovereenkomst.jsonData && Object.keys(koopovereenkomst.jsonData).length > 0 && (
+                              <p className="mt-1 text-sm text-gray-500">
+                                JSON data beschikbaar
                               </p>
-                            </div>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {koopovereenkomst.status === 'geüpload' && (
+                              <button
+                                onClick={() => handleExtractData(koopovereenkomst.id)}
+                                disabled={isExtracting === koopovereenkomst.id}
+                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                              >
+                                {isExtracting === koopovereenkomst.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-white mr-1"></div>
+                                    Uitlezen...
+                                  </>
+                                ) : (
+                                  <>
+                                    <DocumentTextIcon className="h-3 w-3 mr-1" />
+                                    Uitlezen
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            {koopovereenkomst.status === 'uitgelezen' && (
+                              <button
+                                onClick={() => router.push(`/koopovereenkomsten/controleren/${koopovereenkomst.id}`)}
+                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                <ClipboardDocumentCheckIcon className="h-3 w-3 mr-1" />
+                                Controleren
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(koopovereenkomst.id)}
+                              disabled={isDeleting === koopovereenkomst.id}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              {isDeleting === koopovereenkomst.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-white mr-1"></div>
+                                  Verwijderen...
+                                </>
+                              ) : (
+                                <>
+                                  <TrashIcon className="h-3 w-3 mr-1" />
+                                  Verwijderen
+                                </>
+                              )}
+                            </button>
+                            <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              {new Date(koopovereenkomst.createdAt).toLocaleDateString('nl-NL')}
+                            </p>
                           </div>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

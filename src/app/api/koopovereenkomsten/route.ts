@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+
+// Define the type for koopovereenkomst response
+interface KoopovereenkomstResponse {
+  id: string;
+  naam: string;
+  status: string;
+  jsonData: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export async function POST(request: Request) {
   try {
@@ -57,6 +68,8 @@ export async function POST(request: Request) {
       data: {
         naam,
         pdfBase64,
+        jsonData: {},
+        status: 'geüpload',
         userId: user.id,
       },
     });
@@ -64,6 +77,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       id: koopovereenkomst.id,
       naam: koopovereenkomst.naam,
+      status: koopovereenkomst.status,
+      jsonData: koopovereenkomst.jsonData,
       createdAt: koopovereenkomst.createdAt,
       updatedAt: koopovereenkomst.updatedAt,
     });
@@ -81,7 +96,7 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -96,14 +111,24 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Gebruiker niet gevonden' }, { status: 404 });
     }
 
-    return NextResponse.json(user.koopovereenkomsten);
+    // Filter out sensitive data before sending to client
+    const koopovereenkomsten = user.koopovereenkomsten.map((koopovereenkomst: any): KoopovereenkomstResponse => ({
+      id: koopovereenkomst.id,
+      naam: koopovereenkomst.naam,
+      status: koopovereenkomst.status,
+      jsonData: koopovereenkomst.jsonData,
+      createdAt: koopovereenkomst.createdAt,
+      updatedAt: koopovereenkomst.updatedAt,
+    }));
+
+    return NextResponse.json(koopovereenkomsten);
   } catch (error) {
     console.error('Error fetching koopovereenkomsten:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Er is een fout opgetreden bij het ophalen van de koopovereenkomsten' },
       { status: 500 }
     );
   }

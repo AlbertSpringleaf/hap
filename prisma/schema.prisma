@@ -72,6 +72,8 @@ model Koopovereenkomst {
   id          String   @id @default(cuid())
   naam        String
   pdfBase64   String   @db.Text
+  jsonData    Json?    @default("{}")
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   userId      String
