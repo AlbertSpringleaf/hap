@@ -74,6 +74,7 @@ model Koopovereenkomst {
   pdfBase64   String   @db.Text
   jsonData    Json?    @default("{}")
   status      String   @default("PENDING")
+  errorMessage String? @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   userId      String

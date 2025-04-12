@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
+  let koopovereenkomstId: string | undefined;
+  
   try {
     const session = await getServerSession(authOptions);
 
@@ -11,7 +14,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
     }
 
-    const { koopovereenkomstId } = await request.json();
+    const { koopovereenkomstId: id } = await request.json();
+    koopovereenkomstId = id;
 
     if (!koopovereenkomstId) {
       return NextResponse.json(
@@ -35,6 +39,15 @@ export async function POST(request: Request) {
     // Get the koopovereenkomst
     const koopovereenkomst = await prisma.koopovereenkomst.findUnique({
       where: { id: koopovereenkomstId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!koopovereenkomst) {
@@ -70,13 +83,28 @@ export async function POST(request: Request) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Error from extraction API:', errorData);
       
-      // Update the koopovereenkomst with failed status
-      await prisma.koopovereenkomst.update({
-        where: { id: koopovereenkomstId },
-        data: {
-          status: 'uitlezen mislukt',
-        },
-      });
+      // Update the koopovereenkomst with failed status and error message
+      if (koopovereenkomstId) {
+        try {
+          // First update the status
+          await prisma.koopovereenkomst.update({
+            where: { id: koopovereenkomstId },
+            data: {
+              status: 'uitlezen mislukt',
+            },
+          });
+
+          // Then update the error message
+          await prisma.koopovereenkomst.update({
+            where: { id: koopovereenkomstId },
+            data: {
+              errorMessage: JSON.stringify({ error: errorData }),
+            } as Prisma.KoopovereenkomstUpdateInput,
+          });
+        } catch (updateError) {
+          console.error('Error updating koopovereenkomst with error message:', updateError);
+        }
+      }
       
       return NextResponse.json(
         { error: 'Fout bij het extraheren van gegevens uit de koopovereenkomst' },
@@ -90,11 +118,21 @@ export async function POST(request: Request) {
     const updatedKoopovereenkomst = await prisma.koopovereenkomst.update({
       where: { id: koopovereenkomstId },
       data: {
-        jsonData: extractedData,
         status: 'uitgelezen',
+        jsonData: extractedData,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
+    // Return the response with user information
     return NextResponse.json({
       id: updatedKoopovereenkomst.id,
       naam: updatedKoopovereenkomst.naam,
@@ -102,9 +140,38 @@ export async function POST(request: Request) {
       jsonData: updatedKoopovereenkomst.jsonData,
       createdAt: updatedKoopovereenkomst.createdAt,
       updatedAt: updatedKoopovereenkomst.updatedAt,
+      user: updatedKoopovereenkomst.user ? {
+        id: updatedKoopovereenkomst.user.id,
+        name: updatedKoopovereenkomst.user.name,
+        email: updatedKoopovereenkomst.user.email,
+      } : undefined,
     });
   } catch (error) {
     console.error('Error extracting data from koopovereenkomst:', error);
+    
+    // Update the koopovereenkomst with failed status and error message
+    if (koopovereenkomstId) {
+      try {
+        // First update the status
+        await prisma.koopovereenkomst.update({
+          where: { id: koopovereenkomstId },
+          data: {
+            status: 'uitlezen mislukt',
+          },
+        });
+
+        // Then update the error message
+        await prisma.koopovereenkomst.update({
+          where: { id: koopovereenkomstId },
+          data: {
+            errorMessage: JSON.stringify({ error: error instanceof Error ? error.message : 'Onbekende fout' }),
+          } as Prisma.KoopovereenkomstUpdateInput,
+        });
+      } catch (updateError) {
+        console.error('Error updating koopovereenkomst with error message:', updateError);
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het extraheren van gegevens uit de koopovereenkomst' },
       { status: 500 }

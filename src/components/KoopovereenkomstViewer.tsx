@@ -1,99 +1,62 @@
-import { useState, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
-
-// Set the worker source for pdf.js
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import React, { useEffect, useState } from 'react';
 
 interface KoopovereenkomstViewerProps {
-  pdfData: string;
+  pdfBase64: string;
 }
 
-export default function KoopovereenkomstViewer({ pdfData }: KoopovereenkomstViewerProps) {
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
+const KoopovereenkomstViewer: React.FC<KoopovereenkomstViewerProps> = ({ pdfBase64 }) => {
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
-  // Create data URL only when component mounts to avoid unnecessary re-renders
   useEffect(() => {
-    if (pdfData) {
-      setPdfDataUrl(`data:application/pdf;base64,${pdfData}`);
-      setIsLoading(false);
-    }
-  }, [pdfData]);
+    try {
+      // Convert base64 to binary
+      const binaryString = window.atob(pdfBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages);
-    setIsLoading(false);
+      // Create blob and URL
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+
+      // Cleanup
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } catch (e) {
+      console.error('Error processing PDF:', e);
+      setError('Er is een fout opgetreden bij het verwerken van de PDF data');
+    }
+  }, [pdfBase64]);
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-600 rounded-lg">
+        {error}
+      </div>
+    );
   }
 
-  function onDocumentLoadError(error: Error) {
-    console.error('Error loading PDF:', error);
-    setIsLoading(false);
+  if (!pdfUrl) {
+    return (
+      <div className="p-4 bg-gray-50 text-gray-600 rounded-lg">
+        PDF wordt geladen...
+      </div>
+    );
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setPageNumber(page => Math.max(1, page - 1))}
-          disabled={pageNumber <= 1 || isLoading}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-        >
-          Vorige
-        </button>
-        <span className="px-4 py-2">
-          Pagina {pageNumber} van {numPages}
-        </span>
-        <button
-          onClick={() => setPageNumber(page => Math.min(numPages, page + 1))}
-          disabled={pageNumber >= numPages || isLoading}
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-        >
-          Volgende
-        </button>
-      </div>
-      <div className="w-full h-full overflow-auto border border-gray-200 rounded-lg">
-        {isLoading && !pdfDataUrl ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        ) : pdfDataUrl ? (
-          <Document
-            file={pdfDataUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              </div>
-            }
-            options={{
-              cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-              cMapPacked: true,
-              standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/',
-            }}
-          >
-            <Page
-              pageNumber={pageNumber}
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-              scale={1.2}
-              loading={
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
-              }
-            />
-          </Document>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Geen PDF beschikbaar</p>
-          </div>
-        )}
-      </div>
+    <div className="w-full h-[800px] border border-gray-200 rounded-lg overflow-hidden">
+      <embed
+        src={pdfUrl}
+        type="application/pdf"
+        className="w-full h-full"
+      />
     </div>
   );
-} 
+};
+
+export default KoopovereenkomstViewer;

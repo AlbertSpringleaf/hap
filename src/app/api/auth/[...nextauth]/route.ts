@@ -61,9 +61,10 @@ export const authOptions: AuthOptions = {
 
           return {
             id: user.id,
-            email: user.email,
-            organizationId: user.organizationId
-          };
+            email: user.email || '',
+            name: user.name || '',
+            organizationId: user.organizationId || ''
+          } as const;
         }
 
         return null;
