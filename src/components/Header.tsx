@@ -11,17 +11,15 @@ export default function Header() {
   const router = useRouter();
 
   const handleSignOut = async () => {
-    // Get the current hostname
-    const hostname = window.location.hostname;
-    const port = window.location.port;
-    const protocol = window.location.protocol;
+    // Get the current URL path
+    const currentPath = window.location.pathname;
     
-    // Construct the base URL
-    const baseUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    // Get the current URL without the path
+    const baseUrl = window.location.href.substring(0, window.location.href.length - currentPath.length);
     
-    // Sign out with the constructed callback URL
+    // Sign out with the current URL + /login as callback
     await signOut({ 
-      callbackUrl: `${baseUrl}/login`,
+      callbackUrl: `${baseUrl}login`,
       redirect: true
     });
   };
