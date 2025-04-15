@@ -2,6 +2,35 @@ import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Prisma, User as PrismaUser } from "@prisma/client";
+
+// Extend the built-in types
+declare module "next-auth" {
+  interface User {
+    id: string;
+    email: string | null;
+    name: string | null;
+    organizationId: string | null;
+    isAdmin: boolean;
+    registrationStatus: string;
+  }
+
+  interface Session {
+    user: User & {
+      id: string;
+      organizationId: string | null;
+      isAdmin: boolean;
+    }
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    organizationId: string | null;
+    isAdmin: boolean;
+  }
+}
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -22,7 +51,7 @@ export const authOptions: AuthOptions = {
             where: { 
               email: credentials.email 
             }
-          });
+          }) as PrismaUser | null;
 
           if (!user) {
             return null;
@@ -45,7 +74,8 @@ export const authOptions: AuthOptions = {
             email: user.email || '',
             name: user.name || '',
             organizationId: user.organizationId || '',
-            isAdmin: user.isAdmin
+            isAdmin: user.isAdmin,
+            registrationStatus: user.registrationStatus
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -64,6 +94,7 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.id = token.sub as string;
         session.user.organizationId = token.organizationId as string;
         session.user.isAdmin = token.isAdmin as boolean;
       }
