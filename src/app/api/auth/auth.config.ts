@@ -3,12 +3,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// Hardcoded credentials
-const VALID_CREDENTIALS = {
-  email: "a.pietens@springleaf.nl",
-  password: "9fe@m3W6.A.K"
-};
-
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -22,51 +16,41 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        if (credentials.email === VALID_CREDENTIALS.email && 
-            credentials.password === VALID_CREDENTIALS.password) {
-          
-          // Check if organization exists
-          let organization = await prisma.organization.findUnique({
-            where: { domain: "springleafautomation" }
+        try {
+          // Find user by email with all necessary fields
+          const user = await prisma.user.findUnique({
+            where: { 
+              email: credentials.email 
+            }
           });
 
-          // If organization doesn't exist, create it
-          if (!organization) {
-            organization = await prisma.organization.create({
-              data: {
-                domain: "springleafautomation",
-                name: "Springleaf Automation"
-              }
-            });
+          if (!user) {
+            return null;
           }
 
-          // Check if user exists in database
-          let user = await prisma.user.findUnique({
-            where: { email: credentials.email }
-          });
+          // Check if user is approved
+          if (user.registrationStatus !== "APPROVED") {
+            throw new Error("Your registration is pending approval");
+          }
 
-          // If user doesn't exist, create them
-          if (!user) {
-            const hashedPassword = await bcrypt.hash(credentials.password, 10);
-            user = await prisma.user.create({
-              data: {
-                email: credentials.email,
-                password: hashedPassword,
-                name: "Albert Pietens",
-                organizationId: organization.id
-              }
-            });
+          // Verify password
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+          
+          if (!passwordMatch) {
+            return null;
           }
 
           return {
             id: user.id,
             email: user.email || '',
             name: user.name || '',
-            organizationId: user.organizationId || ''
-          } as const;
+            organizationId: user.organizationId || '',
+            isAdmin: user.isAdmin
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-
-        return null;
       }
     })
   ],
@@ -74,12 +58,14 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.organizationId = user.organizationId;
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.organizationId = token.organizationId as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     }
