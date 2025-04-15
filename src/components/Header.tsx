@@ -11,8 +11,10 @@ export default function Header() {
   const router = useRouter();
 
   const handleSignOut = async () => {
+    console.log(window.location.href);
+    console.log(window.location.pathname);
     await signOut({ 
-      callbackUrl: '/login',
+      callbackUrl: 'hap.springleaf.nl/login',
       redirect: true
     });
   };
