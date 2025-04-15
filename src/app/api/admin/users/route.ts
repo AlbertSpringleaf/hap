@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/auth.config";
 import prisma from "@/lib/prisma";
-import { User } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 // GET: Get all users in the organization
 export async function GET() {
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         if (!isAdmin) {
           // Count total number of admins
           const adminCount = await prisma.user.count({
-            where: { isAdmin: true }
+            where: { isAdmin: true },
           });
 
           // If this is the last admin, prevent removing admin rights
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
         await prisma.user.update({
           where: { id: userId },
-          data: { isAdmin: isAdmin },
+          data: { isAdmin },
         });
         break;
 
@@ -117,13 +117,13 @@ export async function POST(request: Request) {
         // Check if this is an admin user
         const userToDelete = await prisma.user.findUnique({
           where: { id: userId },
-          select: { isAdmin: true }
+          select: { isAdmin: true },
         });
 
         if (userToDelete?.isAdmin) {
           // Count total number of admins
           const adminCount = await prisma.user.count({
-            where: { isAdmin: true }
+            where: { isAdmin: true },
           });
 
           // If this is the last admin, prevent deletion
