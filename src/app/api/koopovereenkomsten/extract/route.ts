@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
   let koopovereenkomstId: string | undefined;
@@ -86,20 +85,12 @@ export async function POST(request: Request) {
       // Update the koopovereenkomst with failed status and error message
       if (koopovereenkomstId) {
         try {
-          // First update the status
           await prisma.koopovereenkomst.update({
             where: { id: koopovereenkomstId },
             data: {
               status: 'uitlezen mislukt',
-            },
-          });
-
-          // Then update the error message
-          await prisma.koopovereenkomst.update({
-            where: { id: koopovereenkomstId },
-            data: {
               errorMessage: JSON.stringify({ error: errorData }),
-            } as Prisma.KoopovereenkomstUpdateInput,
+            },
           });
         } catch (updateError) {
           console.error('Error updating koopovereenkomst with error message:', updateError);
@@ -152,20 +143,12 @@ export async function POST(request: Request) {
     // Update the koopovereenkomst with failed status and error message
     if (koopovereenkomstId) {
       try {
-        // First update the status
         await prisma.koopovereenkomst.update({
           where: { id: koopovereenkomstId },
           data: {
             status: 'uitlezen mislukt',
-          },
-        });
-
-        // Then update the error message
-        await prisma.koopovereenkomst.update({
-          where: { id: koopovereenkomstId },
-          data: {
             errorMessage: JSON.stringify({ error: error instanceof Error ? error.message : 'Onbekende fout' }),
-          } as Prisma.KoopovereenkomstUpdateInput,
+          },
         });
       } catch (updateError) {
         console.error('Error updating koopovereenkomst with error message:', updateError);

@@ -16,7 +16,12 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-indigo-600">Hyperautomation Platform</h1>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="text-xl font-bold text-indigo-600 hover:text-indigo-500 transition-colors"
+              >
+                Hyperautomation Platform
+              </button>
             </div>
           </div>
           <div className="flex items-center">
