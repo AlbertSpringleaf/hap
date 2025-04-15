@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "setup:pdfjs": "node setup-pdfjs.js",
-    "deploy": "npx prisma migrate deploy && npm run"
+    "deploy": "npx prisma migrate deploy && npm run build"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
