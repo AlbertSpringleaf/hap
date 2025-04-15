@@ -14,7 +14,7 @@ export default function Header() {
     console.log(window.location.href);
     console.log(window.location.pathname);
     await signOut({ 
-      callbackUrl: 'hap.springleaf.nl/login',
+      callbackUrl: 'https://hap.springleaf.nl/login',
       redirect: true
     });
   };
