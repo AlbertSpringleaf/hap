@@ -12,7 +12,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the admin's organization ID
+    const adminUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { organizationId: true }
+    });
+
+    if (!adminUser?.organizationId) {
+      return NextResponse.json({ error: 'Admin user has no organization' }, { status: 400 });
+    }
+
+    // Only fetch users from the admin's organization
     const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { organizationId: adminUser.organizationId },
+          { pendingOrganizationId: adminUser.organizationId }
+        ]
+      },
       select: {
         id: true,
         email: true,
@@ -49,33 +66,70 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get the admin's organization ID
+    const adminUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { organizationId: true }
+    });
+
+    if (!adminUser?.organizationId) {
+      return NextResponse.json({ error: 'Admin user has no organization' }, { status: 400 });
+    }
+
     const { action, userId, isAdmin } = await request.json();
 
     if (!action || !userId) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
+    // Get the target user to check if they belong to the admin's organization
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        pendingOrganization: true,
+        organization: true
+      }
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Check if the user belongs to the admin's organization
+    const belongsToAdminOrg = 
+      targetUser.organizationId === adminUser.organizationId || 
+      targetUser.pendingOrganizationId === adminUser.organizationId;
+
+    if (!belongsToAdminOrg) {
+      return NextResponse.json({ error: 'You can only manage users from your own organization' }, { status: 403 });
+    }
+
     switch (action) {
       case 'approve':
-        const userToApprove = await prisma.user.findUnique({
-          where: { id: userId },
-          include: { pendingOrganization: true },
-        });
-
-        if (!userToApprove?.pendingOrganization) {
+        if (!targetUser.pendingOrganization) {
           return NextResponse.json({ error: 'User has no pending organization' }, { status: 400 });
+        }
+
+        // Verify the pending organization is the admin's organization
+        if (targetUser.pendingOrganizationId !== adminUser.organizationId) {
+          return NextResponse.json({ error: 'You can only approve users for your own organization' }, { status: 403 });
         }
 
         await prisma.user.update({
           where: { id: userId },
           data: {
-            organizationId: userToApprove.pendingOrganizationId,
+            organizationId: targetUser.pendingOrganizationId,
             pendingOrganizationId: null,
           },
         });
         break;
 
       case 'reject':
+        // Verify the pending organization is the admin's organization
+        if (targetUser.pendingOrganizationId !== adminUser.organizationId) {
+          return NextResponse.json({ error: 'You can only reject users for your own organization' }, { status: 403 });
+        }
+
         await prisma.user.update({
           where: { id: userId },
           data: { pendingOrganizationId: null },
@@ -89,15 +143,18 @@ export async function POST(request: Request) {
 
         // Check if this is removing admin rights
         if (!isAdmin) {
-          // Count total number of admins
+          // Count total number of admins in the organization
           const adminCount = await prisma.user.count({
-            where: { isAdmin: true },
+            where: { 
+              isAdmin: true,
+              organizationId: adminUser.organizationId
+            },
           });
 
           // If this is the last admin, prevent removing admin rights
           if (adminCount <= 1) {
             return NextResponse.json(
-              { error: 'Cannot remove admin rights from the last admin user' },
+              { error: 'Cannot remove admin rights from the last admin user in your organization' },
               { status: 400 }
             );
           }
@@ -115,21 +172,19 @@ export async function POST(request: Request) {
         }
 
         // Check if this is an admin user
-        const userToDelete = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { isAdmin: true },
-        });
-
-        if (userToDelete?.isAdmin) {
-          // Count total number of admins
+        if (targetUser.isAdmin) {
+          // Count total number of admins in the organization
           const adminCount = await prisma.user.count({
-            where: { isAdmin: true },
+            where: { 
+              isAdmin: true,
+              organizationId: adminUser.organizationId
+            },
           });
 
           // If this is the last admin, prevent deletion
           if (adminCount <= 1) {
             return NextResponse.json(
-              { error: 'Cannot delete the last admin user' },
+              { error: 'Cannot delete the last admin user in your organization' },
               { status: 400 }
             );
           }

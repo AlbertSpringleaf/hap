@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -17,6 +17,24 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  // Extract organization name and domain from email
+  useEffect(() => {
+    if (formData.email) {
+      const emailParts = formData.email.split('@');
+      if (emailParts.length === 2) {
+        const domain = emailParts[1];
+        // Extract organization name from domain (remove TLD)
+        const orgName = domain.split('.')[0];
+        
+        setFormData(prev => ({
+          ...prev,
+          organizationName: orgName,
+          organizationDomain: domain
+        }));
+      }
+    }
+  }, [formData.email]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -155,41 +173,23 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
               />
             </div>
-            <div>
-              <label htmlFor="organizationName" className="sr-only">
-                Organization Name
-              </label>
-              <input
-                id="organizationName"
-                name="organizationName"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Organization Name"
-                value={formData.organizationName}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="organizationDomain" className="sr-only">
-                Organization Domain
-              </label>
-              <input
-                id="organizationDomain"
-                name="organizationDomain"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Organization Domain (e.g. company.com)"
-                value={formData.organizationDomain}
-                onChange={handleChange}
-              />
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-md">
+            <p className="text-sm text-gray-600 mb-2">Organization details (automatically derived from your email):</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="font-medium">Organization:</span> {formData.organizationName || "—"}
+              </div>
+              <div>
+                <span className="font-medium">Domain:</span> {formData.organizationDomain || "—"}
+              </div>
             </div>
           </div>
 

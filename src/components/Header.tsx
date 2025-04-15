@@ -74,7 +74,9 @@ export default function Header() {
                   <Menu.Item>
                     {({ active }) => (
                       <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        onClick={() => signOut({ 
+                          callbackUrl: `${window.location.origin}/login` 
+                        })}
                         className={`${
                           active ? 'bg-gray-100' : ''
                         } block px-4 py-2 text-sm text-gray-700 w-full text-left`}
