@@ -10,6 +10,22 @@ export default function Header() {
   const { data: session } = useSession();
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    // Get the current hostname
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    const protocol = window.location.protocol;
+    
+    // Construct the base URL
+    const baseUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    
+    // Sign out with the constructed callback URL
+    await signOut({ 
+      callbackUrl: `${baseUrl}/login`,
+      redirect: true
+    });
+  };
+
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -74,9 +90,7 @@ export default function Header() {
                   <Menu.Item>
                     {({ active }) => (
                       <button
-                        onClick={() => signOut({ 
-                          callbackUrl: `${window.location.origin}/login` 
-                        })}
+                        onClick={handleSignOut}
                         className={`${
                           active ? 'bg-gray-100' : ''
                         } block px-4 py-2 text-sm text-gray-700 w-full text-left`}
