@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { 
   DocumentTextIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 import AppLayout from '@/components/AppLayout';
 
@@ -22,6 +23,13 @@ const appTiles: AppTile[] = [
     icon: DocumentTextIcon,
     href: '/koopovereenkomsten',
     color: 'bg-blue-500',
+  },
+  {
+    title: 'Werkinstructies Robots',
+    description: 'Bekijk alle werkinstructies voor robots',
+    icon: WrenchScrewdriverIcon,
+    href: '/werkinstructies',
+    color: 'bg-green-500',
   }
 ];
 
