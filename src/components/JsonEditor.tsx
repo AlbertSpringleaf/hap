@@ -323,27 +323,33 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
 
   const handleSave = async () => {
     try {
-      console.log('Saving JSON data:', jsonData);
-      const response = await fetch('/api/save-json', {
-        method: 'POST',
+      setIsSaving(true);
+      setError(null);
+      console.log('Saving JSON data:', editedJson);
+      const response = await fetch(`/api/koopovereenkomsten/${id}/json`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(jsonData),
+        body: JSON.stringify(editedJson),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Server error response:', errorData);
-        throw new Error(`Failed to save JSON data: ${errorData.message || response.statusText}`);
+        throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
-      console.log('Save response:', result);
-      toast.success('JSON data saved successfully');
+      const data = await response.json();
+      console.log('Save response:', data);
+      setEditedJson(data.jsonData);
+      toast.success('Wijzigingen opgeslagen');
     } catch (error) {
       console.error('Error saving JSON:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save JSON data');
+      toast.error(`Fout bij opslaan: ${error instanceof Error ? error.message : 'Onbekende fout'}`);
+      setError('Er is een fout opgetreden bij het opslaan');
+    } finally {
+      setIsSaving(false);
     }
   };
 
