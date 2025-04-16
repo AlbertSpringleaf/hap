@@ -399,17 +399,24 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
     let current = newJson;
     
     // Navigeer naar het juiste object in de JSON structuur
-    for (let i = 0; i < arrayPath.length; i++) {
+    for (let i = 0; i < arrayPath.length - 1; i++) {
       current = current[arrayPath[i]];
     }
     
-    // Navigeer naar het juiste object in de nested array
-    for (let j = 0; j < nestedPath.length; j++) {
-      current = current[nestedPath[j]];
+    // Maak een kopie van het array item
+    const arrayItem = { ...current[arrayPath[arrayPath.length - 1]][index] };
+    
+    // Navigeer naar het juiste object in de nested structuur
+    let nestedObj = arrayItem;
+    for (let j = 0; j < nestedPath.length - 1; j++) {
+      nestedObj = { ...nestedObj[nestedPath[j]] };
     }
     
-    // Update het veld in het nested array item
-    current[nestedPath[nestedPath.length - 1]] = value;
+    // Update het veld
+    nestedObj[nestedPath[nestedPath.length - 1]] = value;
+    
+    // Update het array item
+    current[arrayPath[arrayPath.length - 1]][index] = arrayItem;
     
     setEditedJson(newJson);
   };
