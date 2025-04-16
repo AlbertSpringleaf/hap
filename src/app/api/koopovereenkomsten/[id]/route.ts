@@ -79,6 +79,9 @@ export async function PATCH(
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        organization: true,
+      },
     });
 
     if (!user) {
@@ -87,8 +90,23 @@ export async function PATCH(
     }
     console.log('User found:', user.id);
 
+    if (!user.organizationId) {
+      console.log('User has no organization');
+      return NextResponse.json({ error: 'User has no organization' }, { status: 400 });
+    }
+
     const koopovereenkomst = await prisma.koopovereenkomst.findUnique({
       where: { id: params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            organizationId: true,
+          },
+        },
+      },
     });
 
     if (!koopovereenkomst) {
@@ -97,9 +115,9 @@ export async function PATCH(
     }
     console.log('Koopovereenkomst found:', koopovereenkomst.id);
 
-    // Check if the koopovereenkomst belongs to the user
-    if (koopovereenkomst.userId !== user.id) {
-      console.log('User is not authorized. User ID:', user.id, 'Koopovereenkomst user ID:', koopovereenkomst.userId);
+    // Check if the koopovereenkomst belongs to a user in the same organization
+    if (koopovereenkomst.user.organizationId !== user.organizationId) {
+      console.log('User is not in same organization. User organization:', user.organizationId, 'Koopovereenkomst organization:', koopovereenkomst.user.organizationId);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
