@@ -26,6 +26,8 @@ export default function KoopovereenkomstenPage() {
   const router = useRouter();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [koopovereenkomsten, setKoopovereenkomsten] = useState<Koopovereenkomst[]>([]);
+  const [filteredKoopovereenkomsten, setFilteredKoopovereenkomsten] = useState<Koopovereenkomst[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isExtracting, setIsExtracting] = useState<string | null>(null);
@@ -69,6 +71,14 @@ export default function KoopovereenkomstenPage() {
       fetchKoopovereenkomsten();
     }
   }, [session]);
+
+  useEffect(() => {
+    if (selectedStatus === 'all') {
+      setFilteredKoopovereenkomsten(koopovereenkomsten);
+    } else {
+      setFilteredKoopovereenkomsten(koopovereenkomsten.filter(k => k.status === selectedStatus));
+    }
+  }, [selectedStatus, koopovereenkomsten]);
 
   const fetchKoopovereenkomsten = async () => {
     try {
@@ -434,6 +444,23 @@ export default function KoopovereenkomstenPage() {
 
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">Recente overeenkomsten</h2>
+          <div className="flex items-center space-x-2">
+            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">
+              Filter op status:
+            </label>
+            <select
+              id="status-filter"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <option value="all">Alle statussen</option>
+              <option value="geüpload">Geüpload</option>
+              <option value="uitgelezen">Uitgelezen</option>
+              <option value="uitlezen mislukt">Uitlezen mislukt</option>
+              <option value="gecontroleerd">Gecontroleerd</option>
+            </select>
+          </div>
         </div>
 
         {error && (
@@ -465,14 +492,14 @@ export default function KoopovereenkomstenPage() {
           </div>
         )}
 
-        {koopovereenkomsten.length === 0 ? (
+        {filteredKoopovereenkomsten.length === 0 ? (
           <div className="bg-gray-50 rounded-md p-4 text-center">
-            <p className="text-gray-500">Nog geen overeenkomsten beschikbaar.</p>
+            <p className="text-gray-500">Geen overeenkomsten gevonden met de geselecteerde filter.</p>
           </div>
         ) : (
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <ul className="divide-y divide-gray-200">
-              {koopovereenkomsten.map((koopovereenkomst) => (
+              {filteredKoopovereenkomsten.map((koopovereenkomst) => (
                 <li key={koopovereenkomst.id}>
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">

@@ -353,6 +353,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
         await onProcess(id, editedJson);
       }
       router.refresh();
+      router.push('/koopovereenkomsten');
     } catch (err) {
       setError('Er is een fout opgetreden bij het verwerken');
       console.error('Error processing JSON:', err);
@@ -395,29 +396,23 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
 
   // Update een veld in een nested array
   const updateNestedArrayField = (arrayPath: string[], index: number, nestedPath: string[], value: any) => {
-    const newJson = { ...editedJson };
-    let current = newJson;
+    // Maak een diepe kopie van de JSON
+    const newJson = JSON.parse(JSON.stringify(editedJson));
     
-    // Navigeer naar het juiste object in de JSON structuur
-    for (let i = 0; i < arrayPath.length - 1; i++) {
-      current = current[arrayPath[i]];
-    }
+    // Navigeer naar het array item
+    const array = newJson[arrayPath[0]][arrayPath[1]];
+    const item = array[index];
     
-    // Maak een kopie van het array item
-    const arrayItem = { ...current[arrayPath[arrayPath.length - 1]][index] };
-    
-    // Navigeer naar het juiste object in de nested structuur
-    let nestedObj = arrayItem;
-    for (let j = 0; j < nestedPath.length - 1; j++) {
-      nestedObj = { ...nestedObj[nestedPath[j]] };
+    // Navigeer naar het nested object
+    let current = item;
+    for (let i = 0; i < nestedPath.length - 1; i++) {
+      current = current[nestedPath[i]];
     }
     
     // Update het veld
-    nestedObj[nestedPath[nestedPath.length - 1]] = value;
+    current[nestedPath[nestedPath.length - 1]] = value;
     
-    // Update het array item
-    current[arrayPath[arrayPath.length - 1]][index] = arrayItem;
-    
+    // Update de state
     setEditedJson(newJson);
   };
 
