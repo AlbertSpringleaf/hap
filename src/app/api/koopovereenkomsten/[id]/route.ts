@@ -16,10 +16,17 @@ export async function GET(
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        organization: true,
+      },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (!user.organizationId) {
+      return NextResponse.json({ error: 'User has no organization' }, { status: 400 });
     }
 
     const koopovereenkomst = await prisma.koopovereenkomst.findUnique({
@@ -30,6 +37,7 @@ export async function GET(
             id: true,
             name: true,
             email: true,
+            organizationId: true,
           },
         },
       },
@@ -39,8 +47,8 @@ export async function GET(
       return NextResponse.json({ error: 'Koopovereenkomst not found' }, { status: 404 });
     }
 
-    // Check if the koopovereenkomst belongs to the user
-    if (koopovereenkomst.userId !== user.id) {
+    // Check if the koopovereenkomst belongs to a user in the same organization
+    if (koopovereenkomst.user.organizationId !== user.organizationId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

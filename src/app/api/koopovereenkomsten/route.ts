@@ -224,20 +224,7 @@ export async function GET(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        koopovereenkomsten: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
+        organization: true,
       },
     });
 
@@ -245,8 +232,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Gebruiker niet gevonden' }, { status: 404 });
     }
 
+    if (!user.organizationId) {
+      return NextResponse.json({ error: 'Gebruiker heeft geen organisatie' }, { status: 400 });
+    }
+
+    // Get all koopovereenkomsten from users in the same organization
+    const koopovereenkomsten = await prisma.koopovereenkomst.findMany({
+      where: {
+        user: {
+          organizationId: user.organizationId
+        }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
     // Filter out sensitive data before sending to client
-    const koopovereenkomsten = user.koopovereenkomsten.map((koopovereenkomst: any): KoopovereenkomstResponse => ({
+    const filteredKoopovereenkomsten = koopovereenkomsten.map((koopovereenkomst: any): KoopovereenkomstResponse => ({
       id: koopovereenkomst.id,
       naam: koopovereenkomst.naam,
       status: koopovereenkomst.status,
@@ -260,7 +272,7 @@ export async function GET(request: Request) {
       } : undefined,
     }));
 
-    return NextResponse.json(koopovereenkomsten);
+    return NextResponse.json(filteredKoopovereenkomsten);
   } catch (error) {
     console.error('Error fetching koopovereenkomsten:', error);
     return NextResponse.json(
