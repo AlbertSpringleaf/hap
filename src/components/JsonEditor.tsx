@@ -393,6 +393,27 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
     setEditedJson(newJson);
   };
 
+  // Update een veld in een nested array
+  const updateNestedArrayField = (arrayPath: string[], index: number, nestedPath: string[], value: any) => {
+    const newJson = { ...editedJson };
+    let current = newJson;
+    
+    // Navigeer naar het juiste object in de JSON structuur
+    for (let i = 0; i < arrayPath.length; i++) {
+      current = current[arrayPath[i]];
+    }
+    
+    // Navigeer naar het juiste object in de nested array
+    for (let j = 0; j < nestedPath.length; j++) {
+      current = current[nestedPath[j]];
+    }
+    
+    // Update het veld in het nested array item
+    current[nestedPath[nestedPath.length - 1]] = value;
+    
+    setEditedJson(newJson);
+  };
+
   // Render kopers in een tabel
   const renderKopers = () => {
     if (!editedJson?.kopers?.data || editedJson.kopers.data.length === 0) {
@@ -760,7 +781,25 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                 onClick={() => {
                   const newObjecten = {
                     ...editedJson.objecten,
-                    data: [...(editedJson.objecten?.data || []), {}]
+                    data: [...(editedJson.objecten?.data || []), {
+                      kadastraal_adres: {
+                        nummer: '',
+                        sectie: '',
+                        gemeente: '',
+                        is_appartement: false,
+                        is_grondperceel: false,
+                        appartementsindex: null,
+                        is_gemeenschappelijke_ruimte: false
+                      },
+                      plaatselijk_adres: {
+                        plaats: '',
+                        straat: '',
+                        postcode: '',
+                        huisnummer: '',
+                        duidelijk_adres: true,
+                        huisnummer_toevoeging: ''
+                      }
+                    }]
                   };
                   setEditedJson({
                     ...editedJson,
@@ -810,67 +849,15 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                     Verwijderen
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="font-medium">Kadastraal nummer:</div>
+                
+                <h5 className="font-medium text-gray-600 mt-4 mb-2">Kadastraal adres</h5>
+                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                  <div className="font-medium">Nummer:</div>
                   <div>
                     <input
                       type="text"
-                      value={object.kadastraal_nummer || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'kadastraal_nummer', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Adres:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.adres || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'adres', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Postcode:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.postcode || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'postcode', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Plaats:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.plaats || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'plaats', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Type:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.type || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'type', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Oppervlakte:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.oppervlakte || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'oppervlakte', e.target.value)}
-                      className="w-full p-1 border rounded"
-                    />
-                  </div>
-                  <div className="font-medium">Perceel:</div>
-                  <div>
-                    <input
-                      type="text"
-                      value={object.perceel || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'perceel', e.target.value)}
+                      value={object.kadastraal_adres?.nummer || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'nummer'], e.target.value)}
                       className="w-full p-1 border rounded"
                     />
                   </div>
@@ -878,9 +865,112 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                   <div>
                     <input
                       type="text"
-                      value={object.sectie || ''}
-                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'sectie', e.target.value)}
+                      value={object.kadastraal_adres?.sectie || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'sectie'], e.target.value)}
                       className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Gemeente:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.kadastraal_adres?.gemeente || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'gemeente'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Is appartement:</div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={object.kadastraal_adres?.is_appartement || false}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'is_appartement'], e.target.checked)}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                  </div>
+                  <div className="font-medium">Is grondperceel:</div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={object.kadastraal_adres?.is_grondperceel || false}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'is_grondperceel'], e.target.checked)}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                  </div>
+                  <div className="font-medium">Appartementsindex:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.kadastraal_adres?.appartementsindex || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'appartementsindex'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Is gemeenschappelijke ruimte:</div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={object.kadastraal_adres?.is_gemeenschappelijke_ruimte || false}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['kadastraal_adres', 'is_gemeenschappelijke_ruimte'], e.target.checked)}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                  </div>
+                </div>
+                
+                <h5 className="font-medium text-gray-600 mt-4 mb-2">Plaatselijk adres</h5>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="font-medium">Plaats:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.plaatselijk_adres?.plaats || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'plaats'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Straat:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.plaatselijk_adres?.straat || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'straat'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Postcode:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.plaatselijk_adres?.postcode || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'postcode'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Huisnummer:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.plaatselijk_adres?.huisnummer || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'huisnummer'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Huisnummer toevoeging:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.plaatselijk_adres?.huisnummer_toevoeging || ''}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'huisnummer_toevoeging'], e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Duidelijk adres:</div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={object.plaatselijk_adres?.duidelijk_adres || false}
+                      onChange={(e) => updateNestedArrayField(['objecten', 'data'], index, ['plaatselijk_adres', 'duidelijk_adres'], e.target.checked)}
+                      className="h-4 w-4 text-blue-600"
                     />
                   </div>
                 </div>
@@ -891,7 +981,25 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                 onClick={() => {
                   const newObjecten = {
                     ...editedJson.objecten,
-                    data: [...editedJson.objecten.data, {}]
+                    data: [...editedJson.objecten.data, {
+                      kadastraal_adres: {
+                        nummer: '',
+                        sectie: '',
+                        gemeente: '',
+                        is_appartement: false,
+                        is_grondperceel: false,
+                        appartementsindex: null,
+                        is_gemeenschappelijke_ruimte: false
+                      },
+                      plaatselijk_adres: {
+                        plaats: '',
+                        straat: '',
+                        postcode: '',
+                        huisnummer: '',
+                        duidelijk_adres: true,
+                        huisnummer_toevoeging: ''
+                      }
+                    }]
                   };
                   setEditedJson({
                     ...editedJson,
