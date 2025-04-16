@@ -11,6 +11,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!session.user.organizationId) {
+      return NextResponse.json({ error: 'No organization ID found' }, { status: 400 });
+    }
+
     const organization = await prisma.organization.findUnique({
       where: { id: session.user.organizationId },
       select: {
@@ -49,8 +53,12 @@ export async function POST(request: Request) {
 
     const data = await request.json();
     
+    if (!session.user.organizationId) {
+      return NextResponse.json({ error: 'No organization ID found' }, { status: 400 });
+    }
+
     const organization = await prisma.organization.update({
-      where: { id: session.user.organizationId },
+      where: { id: session.user.organizationId as string },
       data: {
         billingName: data.billingName,
         billingAddress: data.billingAddress,
