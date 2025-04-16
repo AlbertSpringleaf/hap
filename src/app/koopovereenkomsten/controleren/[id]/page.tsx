@@ -75,6 +75,23 @@ export default function ControlerenPage({ params }: { params: { id: string } }) 
     setKoopovereenkomst(updatedData);
   };
 
+  const handleProcess = async (id: string, jsonData: any) => {
+    const response = await fetch(`/api/koopovereenkomsten/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ jsonData, status: 'gecontroleerd' }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to process koopovereenkomst');
+    }
+
+    const updatedData = await response.json();
+    setKoopovereenkomst(updatedData);
+  };
+
   const handleDelete = async (id: string) => {
     const response = await fetch(`/api/koopovereenkomsten/${id}`, {
       method: 'DELETE',
@@ -177,6 +194,7 @@ export default function ControlerenPage({ params }: { params: { id: string } }) 
                 jsonData={koopovereenkomst.jsonData}
                 onSave={handleSaveJson}
                 onDelete={handleDelete}
+                onProcess={koopovereenkomst.status !== 'gecontroleerd' ? handleProcess : undefined}
               />
             </div>
           </div>

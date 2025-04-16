@@ -94,11 +94,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { jsonData } = await request.json();
+    const { jsonData, status } = await request.json();
+
+    const updateData: any = {};
+    if (jsonData !== undefined) {
+      updateData.jsonData = jsonData;
+    }
+    if (status !== undefined) {
+      updateData.status = status;
+    }
 
     const updatedKoopovereenkomst = await prisma.koopovereenkomst.update({
       where: { id: params.id },
-      data: { jsonData },
+      data: updateData,
       include: {
         user: {
           select: {

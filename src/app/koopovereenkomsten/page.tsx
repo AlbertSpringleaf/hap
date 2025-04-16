@@ -9,8 +9,9 @@ import AppLayout from '@/components/AppLayout';
 interface Koopovereenkomst {
   id: string;
   naam: string;
-  status: string;
+  status: 'geüpload' | 'uitgelezen' | 'uitlezen mislukt' | 'gecontroleerd';
   jsonData?: any;
+  pdfBase64: string;
   errorMessage?: string;
   createdAt: string;
   user?: {
@@ -528,7 +529,12 @@ export default function KoopovereenkomstenPage() {
                         {koopovereenkomst.status === 'uitgelezen' && (
                           <button
                             onClick={() => router.push(`/koopovereenkomsten/controleren/${koopovereenkomst.id}`)}
-                            className="inline-flex items-center w-36 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            disabled={koopovereenkomst.status === 'gecontroleerd' as const}
+                            className={`inline-flex items-center w-36 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                              koopovereenkomst.status === 'gecontroleerd' as const
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                            }`}
                           >
                             <ClipboardDocumentCheckIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                             <span className="flex-1 text-center">Controleren</span>

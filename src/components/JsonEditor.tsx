@@ -7,6 +7,7 @@ interface JsonEditorProps {
   jsonData: any;
   onSave: (id: string, jsonData: any) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onProcess?: (id: string, jsonData: any) => Promise<void>;
 }
 
 // DatePicker component
@@ -302,7 +303,7 @@ const DatePicker = ({
   );
 };
 
-const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete }) => {
+const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete, onProcess }) => {
   const [editedJson, setEditedJson] = useState(jsonData);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -340,6 +341,23 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete 
     } catch (err) {
       setError('Er is een fout opgetreden bij het verwijderen');
       console.error('Error deleting record:', err);
+    }
+  };
+
+  const handleProcess = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      await onSave(id, editedJson);
+      if (onProcess) {
+        await onProcess(id, editedJson);
+      }
+      router.refresh();
+    } catch (err) {
+      setError('Er is een fout opgetreden bij het verwerken');
+      console.error('Error processing JSON:', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1500,12 +1518,29 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete 
         </button>
         
         <button
+          onClick={() => router.push('/koopovereenkomsten')}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Annuleren
+        </button>
+        
+        <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-green-300"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
         >
           {isSaving ? 'Opslaan...' : 'Opslaan'}
         </button>
+
+        {onProcess && (
+          <button
+            onClick={handleProcess}
+            disabled={isSaving}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-green-300"
+          >
+            {isSaving ? 'Verwerken...' : 'Verwerken'}
+          </button>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
