@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface JsonEditorProps {
   id: string;
@@ -322,15 +323,27 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
 
   const handleSave = async () => {
     try {
-      setIsSaving(true);
-      setError(null);
-      await onSave(id, editedJson);
-      router.refresh();
-    } catch (err) {
-      setError('Er is een fout opgetreden bij het opslaan');
-      console.error('Error saving JSON:', err);
-    } finally {
-      setIsSaving(false);
+      console.log('Saving JSON data:', jsonData);
+      const response = await fetch('/api/save-json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error response:', errorData);
+        throw new Error(`Failed to save JSON data: ${errorData.message || response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Save response:', result);
+      toast.success('JSON data saved successfully');
+    } catch (error) {
+      console.error('Error saving JSON:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save JSON data');
     }
   };
 
