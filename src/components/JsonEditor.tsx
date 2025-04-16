@@ -649,15 +649,6 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                             className="w-20 p-1 border rounded"
                             placeholder="Toevoeging"
                           />
-                          {index > 0 && (
-                            <button
-                              onClick={() => copyAddressFromFirstBuyer(index)}
-                              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm whitespace-nowrap"
-                              title={`Kopieer adres van ${getFirstBuyerName()}`}
-                            >
-                              Kopieer van {getFirstBuyerName()}
-                            </button>
-                          )}
                         </div>
                         
                         <div className="font-medium">Postcode:</div>
@@ -853,6 +844,42 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                       type="text"
                       value={object.plaats || ''}
                       onChange={(e) => updateArrayField(['objecten', 'data'], index, 'plaats', e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Type:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.type || ''}
+                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'type', e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Oppervlakte:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.oppervlakte || ''}
+                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'oppervlakte', e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Perceel:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.perceel || ''}
+                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'perceel', e.target.value)}
+                      className="w-full p-1 border rounded"
+                    />
+                  </div>
+                  <div className="font-medium">Sectie:</div>
+                  <div>
+                    <input
+                      type="text"
+                      value={object.sectie || ''}
+                      onChange={(e) => updateArrayField(['objecten', 'data'], index, 'sectie', e.target.value)}
                       className="w-full p-1 border rounded"
                     />
                   </div>
@@ -1356,15 +1383,6 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
                             className="w-20 p-1 border rounded"
                             placeholder="Toevoeging"
                           />
-                          {index > 0 && (
-                            <button
-                              onClick={() => copyAddressFromFirstSeller(index)}
-                              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm whitespace-nowrap"
-                              title={`Kopieer adres van ${getFirstSellerName()}`}
-                            >
-                              Kopieer van {getFirstSellerName()}
-                            </button>
-                          )}
                         </div>
                         
                         <div className="font-medium">Postcode:</div>
