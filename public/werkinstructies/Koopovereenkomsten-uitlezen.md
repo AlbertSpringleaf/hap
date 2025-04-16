@@ -67,7 +67,5 @@ Deze instructie legt uit hoe u koopovereenkomsten kunt uitlezen in het Hyperauto
 
 ## Tips voor het beste resultaat
 
-* Gebruik bij voorkeur PDF-bestanden die digitaal zijn gegenereerd (niet gescand)
-* Zorg dat de tekst in het PDF-bestand selecteerbaar is
 * Controleer of alle belangrijke pagina's in het PDF-bestand zijn opgenomen
 * Als u meerdere overeenkomsten heeft, upload deze één voor één voor het beste resultaat 

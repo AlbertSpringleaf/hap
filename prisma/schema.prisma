@@ -45,6 +45,18 @@ model Organization {
   pendingUsers User[] @relation("PendingUsers")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Billing information
+  billingName String?
+  billingAddress String?
+  billingPostalCode String?
+  billingCity String?
+  billingCountry String?
+  billingVATNumber String?
+  billingEmail String?
+  
+  // Application access settings
+  hasKoopovereenkomstenAccess Boolean @default(false)
 }
 
 model User {

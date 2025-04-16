@@ -23,6 +23,7 @@ interface Koopovereenkomst {
 export default function KoopovereenkomstenPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [koopovereenkomsten, setKoopovereenkomsten] = useState<Koopovereenkomst[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -32,6 +33,35 @@ export default function KoopovereenkomstenPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated') {
+      checkAccess();
+    }
+  }, [status, session, router]);
+
+  const checkAccess = async () => {
+    try {
+      const response = await fetch('/api/organization-settings');
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      const data = await response.json();
+      setHasAccess(data.hasKoopovereenkomstenAccess);
+      
+      if (!data.hasKoopovereenkomstenAccess) {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error checking access:', err);
+      setHasAccess(false);
+      router.push('/dashboard');
+    }
+  };
+
+  if (hasAccess === false) {
+    return null; // Will redirect to dashboard
+  }
 
   useEffect(() => {
     if (session?.user) {

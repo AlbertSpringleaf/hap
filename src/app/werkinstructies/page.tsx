@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 interface WorkInstruction {
   id: string;
@@ -61,6 +61,15 @@ export default function WorkInstructionsPage() {
     <AppLayout>
       <div className="px-4 py-6 sm:px-0">
         <div>
+          <div className="flex items-center mb-6">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center text-indigo-600 hover:text-indigo-800"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-1" />
+              Terug naar dashboard
+            </button>
+          </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Werkinstructies</h2>
           
           {error && (
