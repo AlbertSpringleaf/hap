@@ -120,6 +120,7 @@ export async function POST(request: Request) {
           data: {
             organizationId: targetUser.pendingOrganizationId,
             pendingOrganizationId: null,
+            registrationStatus: "APPROVED",
           },
         });
         break;
