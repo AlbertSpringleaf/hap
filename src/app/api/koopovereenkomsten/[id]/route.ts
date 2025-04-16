@@ -68,33 +68,43 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('PATCH request received for koopovereenkomst:', params.id);
+    
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
+      console.log('No session or email found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    console.log('User authenticated:', session.user.email);
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
 
     if (!user) {
+      console.log('User not found in database');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    console.log('User found:', user.id);
 
     const koopovereenkomst = await prisma.koopovereenkomst.findUnique({
       where: { id: params.id },
     });
 
     if (!koopovereenkomst) {
+      console.log('Koopovereenkomst not found:', params.id);
       return NextResponse.json({ error: 'Koopovereenkomst not found' }, { status: 404 });
     }
+    console.log('Koopovereenkomst found:', koopovereenkomst.id);
 
     // Check if the koopovereenkomst belongs to the user
     if (koopovereenkomst.userId !== user.id) {
+      console.log('User is not authorized. User ID:', user.id, 'Koopovereenkomst user ID:', koopovereenkomst.userId);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const { jsonData, status } = await request.json();
+    console.log('Request body received:', { hasJsonData: !!jsonData, status });
 
     const updateData: any = {};
     if (jsonData !== undefined) {
@@ -103,6 +113,7 @@ export async function PATCH(
     if (status !== undefined) {
       updateData.status = status;
     }
+    console.log('Update data prepared:', updateData);
 
     const updatedKoopovereenkomst = await prisma.koopovereenkomst.update({
       where: { id: params.id },
@@ -117,6 +128,7 @@ export async function PATCH(
         },
       },
     });
+    console.log('Koopovereenkomst updated successfully');
 
     return NextResponse.json(updatedKoopovereenkomst);
   } catch (error) {

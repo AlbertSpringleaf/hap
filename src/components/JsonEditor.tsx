@@ -326,12 +326,12 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ id, jsonData, onSave, onDelete,
       setIsSaving(true);
       setError(null);
       console.log('Saving JSON data:', editedJson);
-      const response = await fetch(`/api/koopovereenkomsten/${id}/json`, {
-        method: 'PUT',
+      const response = await fetch(`/api/koopovereenkomsten/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editedJson),
+        body: JSON.stringify({ jsonData: editedJson }),
       });
 
       if (!response.ok) {
